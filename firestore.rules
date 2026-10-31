@@ -1,0 +1,727 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // 0. GLOBAL SAFETY NET (DEFAULT DENY ALL)
+    // =========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // 1. HARDENED GLOBAL PRIMITIVES
+    // =========================================================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'findifyai@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isBusinessOwner(bizId) {
+      return isSignedIn() && (
+        bizId == ('biz_' + request.auth.uid) ||
+        bizId == request.auth.uid
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // =========================================================================
+    // 2. VALIDATION BLUEPRINTS (SYNCHRONIZED WITH firebase-blueprint.json)
+    // =========================================================================
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+          'uid',
+          'businessId',
+          'displayName',
+          'workspaceName',
+          'activePlan',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid',
+          'businessId',
+          'displayName',
+          'workspaceName',
+          'activePlan',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.uid is string &&
+        isValidId(data.uid) &&
+        data.uid == request.auth.uid &&
+        data.businessId is string &&
+        isValidId(data.businessId) &&
+        isBusinessOwner(data.businessId) &&
+        data.displayName is string &&
+        data.displayName.size() >= 1 &&
+        data.displayName.size() <= 80 &&
+        data.workspaceName is string &&
+        data.workspaceName.size() >= 1 &&
+        data.workspaceName.size() <= 80 &&
+        data.activePlan is string &&
+        data.activePlan.size() >= 3 &&
+        data.activePlan.size() <= 16 &&
+        data.activePlan in ['Free', 'Pro', 'Team'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidClient(data) {
+      return data.keys().hasAll([
+          'id',
+          'businessId',
+          'name',
+          'company',
+          'email',
+          'industry',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'businessId',
+          'name',
+          'company',
+          'email',
+          'industry',
+          'status',
+          'totalProposals',
+          'pipelineValue',
+          'lastActivity',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.id is string &&
+        isValidId(data.id) &&
+        data.businessId is string &&
+        isValidId(data.businessId) &&
+        isBusinessOwner(data.businessId) &&
+        data.name is string &&
+        data.name.size() >= 1 &&
+        data.name.size() <= 80 &&
+        data.company is string &&
+        data.company.size() >= 1 &&
+        data.company.size() <= 120 &&
+        data.email is string &&
+        data.email.size() >= 3 &&
+        data.email.size() <= 120 &&
+        data.industry is string &&
+        data.industry.size() >= 1 &&
+        data.industry.size() <= 80 &&
+        data.status is string &&
+        data.status in ['Active', 'Prospect', 'Won'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidProposal(data) {
+      return data.keys().hasAll([
+          'id',
+          'businessId',
+          'clientId',
+          'title',
+          'value',
+          'numericValue',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'businessId',
+          'clientId',
+          'title',
+          'clientCompany',
+          'clientName',
+          'clientEmail',
+          'industry',
+          'value',
+          'numericValue',
+          'status',
+          'updatedAt',
+          'createdAt',
+          'style',
+          'timelineSummary',
+          'services',
+          'sections'
+        ]) &&
+        data.id is string &&
+        isValidId(data.id) &&
+        data.businessId is string &&
+        isValidId(data.businessId) &&
+        isBusinessOwner(data.businessId) &&
+        data.clientId is string &&
+        isValidId(data.clientId) &&
+        data.title is string &&
+        data.title.size() >= 1 &&
+        data.title.size() <= 200 &&
+        data.value is string &&
+        data.value.size() >= 1 &&
+        data.value.size() <= 40 &&
+        data.numericValue is number &&
+        data.numericValue >= 0 &&
+        data.numericValue <= 10000000 &&
+        data.status is string &&
+        data.status in ['Draft', 'Sent', 'Viewed', 'Follow-up', 'Accepted', 'Declined'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidMeeting(data) {
+      return data.keys().hasAll([
+          'id',
+          'businessId',
+          'clientId',
+          'title',
+          'date',
+          'time',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'businessId',
+          'clientId',
+          'proposalId',
+          'title',
+          'clientCompany',
+          'clientName',
+          'clientEmail',
+          'type',
+          'date',
+          'time',
+          'durationMinutes',
+          'timezone',
+          'platform',
+          'meetingLink',
+          'agenda',
+          'status',
+          'proposalTitle',
+          'googleCalendarEventId',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.id is string &&
+        isValidId(data.id) &&
+        data.businessId is string &&
+        isValidId(data.businessId) &&
+        isBusinessOwner(data.businessId) &&
+        data.clientId is string &&
+        isValidId(data.clientId) &&
+        data.title is string &&
+        data.title.size() >= 1 &&
+        data.title.size() <= 200 &&
+        data.date is string &&
+        data.date.size() >= 1 &&
+        data.date.size() <= 40 &&
+        data.time is string &&
+        data.time.size() >= 1 &&
+        data.time.size() <= 40 &&
+        data.status is string &&
+        data.status in ['Scheduled', 'Completed', 'Cancelled'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll([
+          'id',
+          'businessId',
+          'clientId',
+          'name',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'businessId',
+          'clientId',
+          'name',
+          'description',
+          'taskCount',
+          'completionRate',
+          'lead',
+          'color',
+          'status',
+          'clientName',
+          'clientCompany',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.id is string &&
+        isValidId(data.id) &&
+        data.businessId is string &&
+        isValidId(data.businessId) &&
+        isBusinessOwner(data.businessId) &&
+        data.clientId is string &&
+        isValidId(data.clientId) &&
+        data.name is string &&
+        data.name.size() >= 1 &&
+        data.name.size() <= 120 &&
+        data.status is string &&
+        data.status in ['active', 'in_progress', 'completed', 'archived'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTask(data) {
+      return data.keys().hasAll([
+          'id',
+          'businessId',
+          'title',
+          'status',
+          'priority',
+          'dueDate',
+          'assignee',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'businessId',
+          'clientId',
+          'proposalId',
+          'meetingId',
+          'projectId',
+          'title',
+          'description',
+          'project',
+          'status',
+          'priority',
+          'dueDate',
+          'assignee',
+          'automated',
+          'estimatedMinutes',
+          'clientCompany',
+          'subtasks',
+          'comments',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.id is string &&
+        isValidId(data.id) &&
+        data.businessId is string &&
+        isValidId(data.businessId) &&
+        isBusinessOwner(data.businessId) &&
+        data.title is string &&
+        data.title.size() >= 1 &&
+        data.title.size() <= 200 &&
+        data.status is string &&
+        data.status in ['today', 'in_progress', 'completed'] &&
+        data.priority is string &&
+        data.priority in ['High', 'Medium', 'Calm', 'Low'] &&
+        data.dueDate is string &&
+        data.dueDate.size() >= 1 &&
+        data.dueDate.size() <= 60 &&
+        data.assignee is string &&
+        data.assignee.size() >= 1 &&
+        data.assignee.size() <= 80 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidFollowUp(data) {
+      return data.keys().hasAll([
+          'id',
+          'businessId',
+          'clientId',
+          'proposalId',
+          'headline',
+          'sent',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'businessId',
+          'clientId',
+          'proposalId',
+          'proposalTitle',
+          'clientCompany',
+          'contactName',
+          'contactEmail',
+          'headline',
+          'subtext',
+          'timingBadge',
+          'aiInsight',
+          'suggestedSubject',
+          'suggestedMessage',
+          'sent',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.id is string &&
+        isValidId(data.id) &&
+        data.businessId is string &&
+        isValidId(data.businessId) &&
+        isBusinessOwner(data.businessId) &&
+        data.clientId is string &&
+        isValidId(data.clientId) &&
+        data.proposalId is string &&
+        isValidId(data.proposalId) &&
+        data.headline is string &&
+        data.headline.size() >= 1 &&
+        data.headline.size() <= 160 &&
+        data.sent is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidPayment(data) {
+      return data.keys().hasAll([
+          'id',
+          'businessId',
+          'clientId',
+          'invoiceNumber',
+          'projectTitle',
+          'amount',
+          'status',
+          'issueDate',
+          'dueDate',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'businessId',
+          'clientId',
+          'proposalId',
+          'invoiceNumber',
+          'clientCompany',
+          'projectTitle',
+          'amount',
+          'currency',
+          'issueDate',
+          'dueDate',
+          'status',
+          'paymentMethod',
+          'paidDate',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.id is string &&
+        isValidId(data.id) &&
+        data.businessId is string &&
+        isValidId(data.businessId) &&
+        isBusinessOwner(data.businessId) &&
+        data.clientId is string &&
+        isValidId(data.clientId) &&
+        data.invoiceNumber is string &&
+        data.invoiceNumber.size() >= 1 &&
+        data.invoiceNumber.size() <= 60 &&
+        data.projectTitle is string &&
+        data.projectTitle.size() >= 1 &&
+        data.projectTitle.size() <= 160 &&
+        data.amount is number &&
+        data.amount >= 0 &&
+        data.amount <= 10000000 &&
+        data.status is string &&
+        data.status in ['Paid', 'Pending', 'Overdue'] &&
+        data.issueDate is string &&
+        data.issueDate.size() >= 1 &&
+        data.issueDate.size() <= 40 &&
+        data.dueDate is string &&
+        data.dueDate.size() >= 1 &&
+        data.dueDate.size() <= 40 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // =========================================================================
+    // 3. COLLECTION RULES: /users/{userId}
+    // =========================================================================
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isAdmin());
+
+      allow create: if isSignedIn() &&
+        isValidId(userId) &&
+        isOwner(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().uid == userId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() &&
+        isValidId(userId) &&
+        isValidUserProfile(incoming()) && (
+          isAdmin() || (
+            isOwner(userId) &&
+            incoming().uid == existing().uid &&
+            incoming().businessId == existing().businessId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time && (
+              incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'workspaceName', 'updatedAt']) ||
+              incoming().diff(existing()).affectedKeys().hasOnly(['activePlan', 'updatedAt']) ||
+              incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'workspaceName', 'activePlan', 'updatedAt'])
+            )
+          )
+        );
+
+      allow delete: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isAdmin());
+    }
+
+    // =========================================================================
+    // 4. COLLECTION RULES: /clients/{clientId}
+    // =========================================================================
+    match /clients/{clientId} {
+      allow get: if isSignedIn() && isValidId(clientId) && (isAdmin() || isBusinessOwner(existing().businessId));
+
+      allow list: if isSignedIn() && isBusinessOwner(resource.data.businessId);
+
+      allow create: if isSignedIn() &&
+        isValidId(clientId) &&
+        isValidClient(incoming()) &&
+        incoming().id == clientId &&
+        isBusinessOwner(incoming().businessId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() &&
+        isValidId(clientId) &&
+        isValidClient(incoming()) && (
+          isAdmin() || (
+            isBusinessOwner(existing().businessId) &&
+            incoming().id == existing().id &&
+            incoming().businessId == existing().businessId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time
+          )
+        );
+
+      allow delete: if isSignedIn() &&
+        isValidId(clientId) && (
+          isAdmin() || isBusinessOwner(existing().businessId)
+        );
+    }
+
+    // =========================================================================
+    // 5. COLLECTION RULES: /proposals/{proposalId}
+    // =========================================================================
+    match /proposals/{proposalId} {
+      allow get: if isSignedIn() && isValidId(proposalId) && (isAdmin() || isBusinessOwner(existing().businessId));
+
+      allow list: if isSignedIn() && isBusinessOwner(resource.data.businessId);
+
+      allow create: if isSignedIn() &&
+        isValidId(proposalId) &&
+        isValidProposal(incoming()) &&
+        incoming().id == proposalId &&
+        isBusinessOwner(incoming().businessId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() &&
+        isValidId(proposalId) &&
+        isValidProposal(incoming()) && (
+          isAdmin() || (
+            isBusinessOwner(existing().businessId) &&
+            incoming().id == existing().id &&
+            incoming().businessId == existing().businessId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time
+          )
+        );
+
+      allow delete: if isSignedIn() &&
+        isValidId(proposalId) && (
+          isAdmin() || isBusinessOwner(existing().businessId)
+        );
+    }
+
+    // =========================================================================
+    // 6. COLLECTION RULES: /meetings/{meetingId}
+    // =========================================================================
+    match /meetings/{meetingId} {
+      allow get: if isSignedIn() && isValidId(meetingId) && (isAdmin() || isBusinessOwner(existing().businessId));
+
+      allow list: if isSignedIn() && isBusinessOwner(resource.data.businessId);
+
+      allow create: if isSignedIn() &&
+        isValidId(meetingId) &&
+        isValidMeeting(incoming()) &&
+        incoming().id == meetingId &&
+        isBusinessOwner(incoming().businessId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() &&
+        isValidId(meetingId) &&
+        isValidMeeting(incoming()) && (
+          isAdmin() || (
+            isBusinessOwner(existing().businessId) &&
+            incoming().id == existing().id &&
+            incoming().businessId == existing().businessId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time
+          )
+        );
+
+      allow delete: if isSignedIn() &&
+        isValidId(meetingId) && (
+          isAdmin() || isBusinessOwner(existing().businessId)
+        );
+    }
+
+    // =========================================================================
+    // 7. COLLECTION RULES: /projects/{projectId}
+    // =========================================================================
+    match /projects/{projectId} {
+      allow get: if isSignedIn() && isValidId(projectId) && (isAdmin() || isBusinessOwner(existing().businessId));
+
+      allow list: if isSignedIn() && isBusinessOwner(resource.data.businessId);
+
+      allow create: if isSignedIn() &&
+        isValidId(projectId) &&
+        isValidProject(incoming()) &&
+        incoming().id == projectId &&
+        isBusinessOwner(incoming().businessId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() &&
+        isValidId(projectId) &&
+        isValidProject(incoming()) && (
+          isAdmin() || (
+            isBusinessOwner(existing().businessId) &&
+            incoming().id == existing().id &&
+            incoming().businessId == existing().businessId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time
+          )
+        );
+
+      allow delete: if isSignedIn() &&
+        isValidId(projectId) && (
+          isAdmin() || isBusinessOwner(existing().businessId)
+        );
+    }
+
+    // =========================================================================
+    // 8. COLLECTION RULES: /tasks/{taskId}
+    // =========================================================================
+    match /tasks/{taskId} {
+      allow get: if isSignedIn() && isValidId(taskId) && (isAdmin() || isBusinessOwner(existing().businessId));
+
+      allow list: if isSignedIn() && isBusinessOwner(resource.data.businessId);
+
+      allow create: if isSignedIn() &&
+        isValidId(taskId) &&
+        isValidTask(incoming()) &&
+        incoming().id == taskId &&
+        isBusinessOwner(incoming().businessId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() &&
+        isValidId(taskId) &&
+        isValidTask(incoming()) && (
+          isAdmin() || (
+            isBusinessOwner(existing().businessId) &&
+            incoming().id == existing().id &&
+            incoming().businessId == existing().businessId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time
+          )
+        );
+
+      allow delete: if isSignedIn() &&
+        isValidId(taskId) && (
+          isAdmin() || isBusinessOwner(existing().businessId)
+        );
+    }
+
+    // =========================================================================
+    // 9. COLLECTION RULES: /followUps/{followUpId}
+    // =========================================================================
+    match /followUps/{followUpId} {
+      allow get: if isSignedIn() && isValidId(followUpId) && (isAdmin() || isBusinessOwner(existing().businessId));
+
+      allow list: if isSignedIn() && isBusinessOwner(resource.data.businessId);
+
+      allow create: if isSignedIn() &&
+        isValidId(followUpId) &&
+        isValidFollowUp(incoming()) &&
+        incoming().id == followUpId &&
+        isBusinessOwner(incoming().businessId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() &&
+        isValidId(followUpId) &&
+        isValidFollowUp(incoming()) && (
+          isAdmin() || (
+            isBusinessOwner(existing().businessId) &&
+            incoming().id == existing().id &&
+            incoming().businessId == existing().businessId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time
+          )
+        );
+
+      allow delete: if isSignedIn() &&
+        isValidId(followUpId) && (
+          isAdmin() || isBusinessOwner(existing().businessId)
+        );
+    }
+
+    // =========================================================================
+    // 10. COLLECTION RULES: /payments/{paymentId}
+    // =========================================================================
+    match /payments/{paymentId} {
+      allow get: if isSignedIn() && isValidId(paymentId) && (isAdmin() || isBusinessOwner(existing().businessId));
+
+      allow list: if isSignedIn() && isBusinessOwner(resource.data.businessId);
+
+      allow create: if isSignedIn() &&
+        isValidId(paymentId) &&
+        isValidPayment(incoming()) &&
+        incoming().id == paymentId &&
+        isBusinessOwner(incoming().businessId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() &&
+        isValidId(paymentId) &&
+        isValidPayment(incoming()) && (
+          isAdmin() || (
+            isBusinessOwner(existing().businessId) &&
+            incoming().id == existing().id &&
+            incoming().businessId == existing().businessId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time
+          )
+        );
+
+      allow delete: if isSignedIn() &&
+        isValidId(paymentId) && (
+          isAdmin() || isBusinessOwner(existing().businessId)
+        );
+    }
+  }
+}

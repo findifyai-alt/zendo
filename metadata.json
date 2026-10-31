@@ -1,0 +1,6 @@
+{
+  "name": "Zendo Lite — Calm Productivity & Workflow Platform",
+  "description": "Zendo brings your tasks, workflows, and daily priorities into one simple workspace—so you can stay focused, organized, and in control.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

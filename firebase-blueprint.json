@@ -1,0 +1,801 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user workspace profile containing business ID, display settings, and plan tier.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the workspace owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "businessId": {
+          "type": "string",
+          "description": "Unique business identifier for tenant data isolation.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name shown in the Zendo workspace.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "workspaceName": {
+          "type": "string",
+          "description": "Name of the user's Zendo workspace.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "activePlan": {
+          "type": "string",
+          "description": "Current Zendo subscription tier.",
+          "enum": ["Free", "Pro", "Team"],
+          "minLength": 3,
+          "maxLength": 16
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the profile was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the profile was last updated."
+        }
+      },
+      "required": [
+        "uid",
+        "businessId",
+        "displayName",
+        "workspaceName",
+        "activePlan",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "Client account record belonging to a business.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique client document identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "businessId": {
+          "type": "string",
+          "description": "Business ID owning this client.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Contact person name.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "company": {
+          "type": "string",
+          "description": "Company name.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "email": {
+          "type": "string",
+          "description": "Contact email address.",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "industry": {
+          "type": "string",
+          "description": "Industry classification.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "totalProposals": {
+          "type": "number",
+          "description": "Number of proposals created for this client.",
+          "minimum": 0
+        },
+        "pipelineValue": {
+          "type": "string",
+          "description": "Formatted pipeline value string.",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "lastActivity": {
+          "type": "string",
+          "description": "Summary of recent client interaction.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "status": {
+          "type": "string",
+          "description": "Client status.",
+          "enum": ["Active", "Prospect", "Won"],
+          "minLength": 3,
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when client was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when client was last updated."
+        }
+      },
+      "required": [
+        "id",
+        "businessId",
+        "name",
+        "company",
+        "email",
+        "industry",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Proposal": {
+      "title": "Proposal",
+      "description": "Client proposal document belonging to a business and linked to a client.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique proposal document identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "businessId": {
+          "type": "string",
+          "description": "Business ID owning this proposal.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Referenced client document identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "description": "Proposal title.",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "clientCompany": {
+          "type": "string",
+          "description": "Target client company.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "clientName": {
+          "type": "string",
+          "description": "Target contact person name.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "clientEmail": {
+          "type": "string",
+          "description": "Contact email address.",
+          "minLength": 0,
+          "maxLength": 120
+        },
+        "industry": {
+          "type": "string",
+          "description": "Client industry.",
+          "minLength": 0,
+          "maxLength": 80
+        },
+        "value": {
+          "type": "string",
+          "description": "Formatted proposal value string.",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "numericValue": {
+          "type": "number",
+          "description": "Numeric proposal value in USD.",
+          "minimum": 0,
+          "maximum": 10000000
+        },
+        "status": {
+          "type": "string",
+          "description": "Proposal status.",
+          "enum": ["Draft", "Sent", "Viewed", "Follow-up", "Accepted", "Declined"],
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when proposal was last updated."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when proposal was created."
+        }
+      },
+      "required": [
+        "id",
+        "businessId",
+        "clientId",
+        "title",
+        "value",
+        "numericValue",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Meeting": {
+      "title": "Meeting",
+      "description": "Scheduled client meeting linked to a client and optional proposal.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique meeting identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "businessId": {
+          "type": "string",
+          "description": "Business ID owning this meeting.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Client identifier for this meeting.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "proposalId": {
+          "type": "string",
+          "description": "Optional linked proposal identifier.",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "title": {
+          "type": "string",
+          "description": "Meeting subject.",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "type": {
+          "type": "string",
+          "description": "Meeting type description.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "date": {
+          "type": "string",
+          "description": "Scheduled meeting date.",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "time": {
+          "type": "string",
+          "description": "Scheduled meeting time.",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "durationMinutes": {
+          "type": "number",
+          "description": "Meeting duration in minutes.",
+          "minimum": 5,
+          "maximum": 480
+        },
+        "platform": {
+          "type": "string",
+          "description": "Meeting conferencing platform.",
+          "enum": ["Google Meet", "Zoom", "Phone Call", "In-Person"],
+          "minLength": 4,
+          "maxLength": 30
+        },
+        "status": {
+          "type": "string",
+          "description": "Meeting schedule status.",
+          "enum": ["Scheduled", "Completed", "Cancelled"],
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when meeting was scheduled."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when meeting was updated."
+        }
+      },
+      "required": [
+        "id",
+        "businessId",
+        "clientId",
+        "title",
+        "date",
+        "time",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Client project workspace entity.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique project identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "businessId": {
+          "type": "string",
+          "description": "Business ID owning this project.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Client identifier associated with this project.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Project title.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "description": {
+          "type": "string",
+          "description": "Project scope description.",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "taskCount": {
+          "type": "number",
+          "description": "Total tasks count.",
+          "minimum": 0
+        },
+        "completionRate": {
+          "type": "number",
+          "description": "Percentage completed 0-100.",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "lead": {
+          "type": "string",
+          "description": "Project lead person name.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "color": {
+          "type": "string",
+          "description": "Display hex color or class.",
+          "minLength": 1,
+          "maxLength": 30
+        },
+        "status": {
+          "type": "string",
+          "description": "Project status.",
+          "enum": ["active", "in_progress", "completed", "archived"],
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when project was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when project was updated."
+        }
+      },
+      "required": [
+        "id",
+        "businessId",
+        "clientId",
+        "name",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Workflow task belonging to a business with optional links to client, proposal, meeting, or project.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique task identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "businessId": {
+          "type": "string",
+          "description": "Business ID owning this task.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Optional linked client ID.",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "proposalId": {
+          "type": "string",
+          "description": "Optional linked proposal ID.",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "meetingId": {
+          "type": "string",
+          "description": "Optional linked meeting ID.",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Optional linked project ID.",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "title": {
+          "type": "string",
+          "description": "Task headline.",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "project": {
+          "type": "string",
+          "description": "Project or category name.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "status": {
+          "type": "string",
+          "description": "Task status.",
+          "enum": ["today", "in_progress", "completed"],
+          "minLength": 5,
+          "maxLength": 20
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority level.",
+          "enum": ["High", "Medium", "Calm", "Low"],
+          "minLength": 3,
+          "maxLength": 16
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "Due date label.",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "assignee": {
+          "type": "string",
+          "description": "Assignee name.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional task notes.",
+          "minLength": 0,
+          "maxLength": 1000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when task was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when task was updated."
+        }
+      },
+      "required": [
+        "id",
+        "businessId",
+        "title",
+        "status",
+        "priority",
+        "dueDate",
+        "assignee",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "FollowUp": {
+      "title": "FollowUp",
+      "description": "Client proposal follow-up action.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique follow-up identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "businessId": {
+          "type": "string",
+          "description": "Business ID owning this follow-up.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Target client identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "proposalId": {
+          "type": "string",
+          "description": "Linked proposal identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "headline": {
+          "type": "string",
+          "description": "Follow-up headline.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "subtext": {
+          "type": "string",
+          "description": "Follow-up subtext.",
+          "minLength": 0,
+          "maxLength": 300
+        },
+        "timingBadge": {
+          "type": "string",
+          "description": "Timing label.",
+          "enum": ["Today", "Viewed", "Tomorrow", "Upcoming"],
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "suggestedSubject": {
+          "type": "string",
+          "description": "Email subject suggestion.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "suggestedMessage": {
+          "type": "string",
+          "description": "Email message body.",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "sent": {
+          "type": "boolean",
+          "description": "Whether follow-up has been sent."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when follow-up was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when follow-up was updated."
+        }
+      },
+      "required": [
+        "id",
+        "businessId",
+        "clientId",
+        "proposalId",
+        "headline",
+        "sent",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Invoice and payment record for a client and business.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique payment record identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "businessId": {
+          "type": "string",
+          "description": "Business ID owning this invoice.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Client identifier billed.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "proposalId": {
+          "type": "string",
+          "description": "Optional linked proposal identifier.",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "invoiceNumber": {
+          "type": "string",
+          "description": "Invoice reference number.",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "projectTitle": {
+          "type": "string",
+          "description": "Project or milestone title.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "amount": {
+          "type": "number",
+          "description": "Invoice amount in USD.",
+          "minimum": 0,
+          "maximum": 10000000
+        },
+        "currency": {
+          "type": "string",
+          "description": "Currency symbol.",
+          "minLength": 1,
+          "maxLength": 10
+        },
+        "issueDate": {
+          "type": "string",
+          "description": "Issue date label.",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "Due date label.",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "status": {
+          "type": "string",
+          "description": "Payment status.",
+          "enum": ["Paid", "Pending", "Overdue"],
+          "minLength": 4,
+          "maxLength": 16
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Payment method details.",
+          "minLength": 0,
+          "maxLength": 80
+        },
+        "paidDate": {
+          "type": "string",
+          "description": "Optional date when paid.",
+          "minLength": 0,
+          "maxLength": 40
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when payment was recorded."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when payment was updated."
+        }
+      },
+      "required": [
+        "id",
+        "businessId",
+        "clientId",
+        "invoiceNumber",
+        "projectTitle",
+        "amount",
+        "status",
+        "issueDate",
+        "dueDate",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "User profiles containing business ID and settings."
+    },
+    "/clients/{clientId}": {
+      "schema": {
+        "$ref": "#/entities/Client"
+      },
+      "description": "Client directory documents isolated by businessId."
+    },
+    "/proposals/{proposalId}": {
+      "schema": {
+        "$ref": "#/entities/Proposal"
+      },
+      "description": "Client proposals isolated by businessId with clientId reference."
+    },
+    "/meetings/{meetingId}": {
+      "schema": {
+        "$ref": "#/entities/Meeting"
+      },
+      "description": "Scheduled meetings isolated by businessId with clientId reference."
+    },
+    "/projects/{projectId}": {
+      "schema": {
+        "$ref": "#/entities/Project"
+      },
+      "description": "Projects isolated by businessId with clientId reference."
+    },
+    "/tasks/{taskId}": {
+      "schema": {
+        "$ref": "#/entities/Task"
+      },
+      "description": "Workflow tasks isolated by businessId with optional relational references."
+    },
+    "/followUps/{followUpId}": {
+      "schema": {
+        "$ref": "#/entities/FollowUp"
+      },
+      "description": "Client follow-ups isolated by businessId with clientId and proposalId references."
+    },
+    "/payments/{paymentId}": {
+      "schema": {
+        "$ref": "#/entities/Payment"
+      },
+      "description": "Invoices and payments isolated by businessId with clientId reference."
+    }
+  }
+}
